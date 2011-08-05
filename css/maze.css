@@ -1,0 +1,76 @@
+body {
+	color:#333;
+	font-family:"Droid Sans",Helvetica,Arial,sans;
+	font-size:14px;
+	margin:0;
+}
+
+canvas {
+	display:block;
+	margin:0 auto 10px;
+}
+
+a, a:visited {
+	color:#67b9e8;
+	text-decoration: none;
+}
+
+h1 {
+	margin-bottom: .4em;
+}
+	h1 span {
+		font-family:Georgia;
+		font-size: .55em;
+		font-weight:400;
+		color:#666;
+	}
+
+#time,#steps {
+	font-family:Georgia;
+	font-size:20px;
+	float:left;
+	width:49%;
+}
+
+#steps {
+	float:right;
+	text-align:right;
+}
+
+#a {
+	position:relative;
+	margin:0 auto;
+}
+
+#options {
+	display:none;
+	position:absolute;
+	background:0;
+	color:#000;
+	text-align:center;
+	box-shadow:0 2px 8px rgba(0,0,0,.5);
+	-moz-box-shadow:0 2px 8px rgba(0,0,0,.5);
+	-webkit-box-shadow:0 2px 8px rgba(0,0,0,.5);
+	padding:20px;
+	background: rgba(255,255,255,.95);
+}
+	#options h2 {
+		margin-top:0;
+	}
+	#game-info {
+		margin-top:0;
+		display:none;
+	}
+
+form {
+	text-align:center;
+}
+	label {
+		padding-right:.5em;
+	}
+
+fieldset {
+	border:none;
+	margin:0 0 10px;
+	padding:0;
+}
