@@ -14,7 +14,6 @@
 			onGameEnd: function(didWin){
 				clearInterval(timer);
 				gameInProgress = false;
-				$('#game-info').show();
 				center($("#options").show());
 			},
 			onStart: function(){
@@ -74,14 +73,14 @@
 		
 		function showTime() {
 			deltaTime = Math.floor(((new Date).getTime() - startTime.getTime()) / 1000);
-			$("#time, .time").html(deltaTime + " second" + (deltaTime !== 1 ? "s" : ""));
+			$("#time").html(deltaTime + " second" + (deltaTime !== 1 ? "s" : ""));
 		}
 		
 		function showSteps() {
 			var steps = 0
 			if (mazeGame != undefined)
 				steps = mazeGame.getSteps()
-			$("#steps, .steps").html(steps + " step" + (steps !== 1 ? "s" : ""));
+			$("#steps").html(steps + " step" + (steps !== 1 ? "s" : ""));
 		}
 		
 		function timeTick() {
@@ -96,7 +95,6 @@
 		<div id="time"></div><div id="steps"></div>
 	</div>
 	<div id="options">
-		<p id="game-info">You completed the previous maze in <br /><span class="time"></span> and <span class="steps"></span>.</p>
 		<form>
 			<fieldset><label for="w">Width</label>
 			<input id="w" type="number" min="2" step="1" value="10" /></fieldset>
