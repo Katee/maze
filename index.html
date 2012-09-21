@@ -6,7 +6,7 @@
 	<link rel="stylesheet" href="css/maze.css" />
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
 	<script type="text/javascript" src="js/maze.js"></script>
-	<meta name="viewport" content="initial-scale=1.0;  maximum-scale=1.0;" />
+	<meta name="viewport" content="initial-scale=1.0;	maximum-scale=1.0;" />
 	<script>
 		var mazeGame;
 		var time, timer, startTime;
@@ -59,10 +59,12 @@
 					83: "down"
 				};
 			if (keyCodes[keyCode] !== null && keyCodes[keyCode] !== undefined) {
+				// send arrow keys and wsad to game
 				mazeGame.move(keyCodes[keyCode]);
 				return false;
-			} else if (keyCode === 13 || keyCode === 32) {
-				$('#options button:visible:last').trigger('click');
+			} else if (keyCode === 27) {
+				// close options on escape
+				$('#options').hide();
 				return false;
 			}
 		});
@@ -89,9 +91,9 @@
 	</script>
 </head>
 <body>
+	<canvas id="maze">Sorry your browser doesn't support the canvas element. Try upgrading your browser.</canvas>
 	<div id="a">
 		<h1>Maze<span> <a href="#options">options</a></span></h1>
-		<canvas id="maze">Sorry your browser doesn't support the canvas element. Try upgrading your browser.</canvas>
 		<div id="time"></div><div id="steps"></div>
 	</div>
 	<div id="options">

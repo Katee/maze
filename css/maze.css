@@ -3,11 +3,16 @@ body {
 	font-family:"Droid Sans",Helvetica,Arial,sans;
 	font-size:14px;
 	margin:0;
+  overflow:hidden;
+}
+
+html, body {
+  height: 100%;
 }
 
 canvas {
 	display:block;
-	margin:0 auto 10px;
+	position:absolute;
 }
 
 a, a:visited {
@@ -16,11 +21,11 @@ a, a:visited {
 }
 
 h1 {
-	margin-bottom: .4em;
+	margin-top:-.2em;
 }
 	h1 span {
 		font-family:Georgia;
-		font-size: .55em;
+		font-size:.55em;
 		font-weight:400;
 		color:#666;
 	}

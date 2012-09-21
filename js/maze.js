@@ -8,7 +8,10 @@ function MazeGame(canvas, options) {
 		},
 		starting_position: { x: 0, y: 0 },
 		level_size: [10, 10],
-		scale: 25,
+		offset: {x: 0, y: 0},
+		scale: 26,
+		user_diameter: 4,
+		user_path_width: 8,
 		onStart: function(){},
 		onGameEnd: function(){},
 		onMove: function(){}
@@ -16,6 +19,8 @@ function MazeGame(canvas, options) {
 	
 	// todo: don't use jQuery here
 	options = $.extend({}, default_options, options);
+
+	$(window).on('resize', center);
 	
 	var ctx, currentPos, maze, path, gameInProgress;
 	var offsets = {
@@ -178,9 +183,18 @@ function MazeGame(canvas, options) {
 		currentPos = options.starting_position;
 		path = [];
 		path.push(currentPos);
+		center();
+	}
+
+	function center() {
 		canvas.width = maze.width * options.scale + 3;
 		canvas.height = maze.height * options.scale + 3;
-		$("#a").width(maze.width * options.scale + 3);
+		canvas.width = $('body').width();
+		canvas.height = $('body').height();
+		options.offset.x = Math.floor((canvas.width / 2) - (maze.width * options.scale / 2));
+		options.offset.y = Math.floor((canvas.height / 2) - (maze.height * options.scale / 2));
+		$("#a").width(maze.width * options.scale + 3).css('padding-top', (canvas.height / 2) - (maze.height * options.scale / 2) - $('h1').height());
+		$("#time, #steps").css('margin-top', maze.height * options.scale);
 		draw();
 	}
 	
@@ -190,6 +204,7 @@ function MazeGame(canvas, options) {
 	}
 	
 	function draw() {
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		drawPath();
 		drawMaze();
 	}
@@ -213,17 +228,20 @@ function MazeGame(canvas, options) {
 	}
 	
 	function drawPath() {
-		ctx.fillStyle = options.colors.visited_block;
+		ctx.lineWidth = options.user_path_width;
+		ctx.strokeStyle = options.colors.visited_block;
+		ctx.beginPath();
+		ctx.moveTo(options.offset.x + 0.5 * options.scale, 0);
 		for (i = 0; i < path.length - 1; i++) {
-			ctx.fillRect(path[i].x * options.scale + 2, path[i].y * options.scale + 2, options.scale, options.scale);
+			ctx.lineTo(options.offset.x + (path[i].x + 0.5) * options.scale, options.offset.y + (path[i].y + 0.5) * options.scale);
 		}
-		ctx.fillStyle = options.colors.current_position;
-		ctx.fillRect(currentPos.x * options.scale + 2, currentPos.y * options.scale + 2, options.scale - 2, options.scale - 2);
+		ctx.lineTo(options.offset.x + (currentPos.x + 0.5) * options.scale, options.offset.y + (currentPos.y + 0.5) * options.scale);
+		ctx.stroke();
+		circle(currentPos.x, currentPos.y, options.colors.current_position);
 	}
 	
 	function drawMaze() {
-		ctx.fillStyle = options.colors.finish;
-		ctx.fillRect(maze.end.x * options.scale, maze.end.y * options.scale, options.scale, options.scale);
+		circle(maze.end.x, maze.end.y, options.colors.finish);
 		for (y = 0; y < maze.height; y++) {
 			for (x = 0; x < maze.width; x++) {
 				drawCell(x, y);
@@ -244,11 +262,18 @@ function MazeGame(canvas, options) {
 	function line(x1, y1, x2, y2) {
 		ctx.beginPath();
 		ctx.strokeStyle = options.colors.walls;
-		ctx.lineCap = 'round';
 		ctx.lineWidth = 2;
-		ctx.moveTo(x1 + 1, y1 + 1);
-		ctx.lineTo(x2 + 1, y2 + 1);
+		ctx.moveTo(options.offset.x + x1 + 1, options.offset.y + y1 + 1);
+		ctx.lineTo(options.offset.x + x2 + 1, options.offset.y + y2 + 1);
 		ctx.stroke();
+	}
+
+	function circle(x, y, color) {
+		ctx.fillStyle = color;
+		ctx.beginPath();
+		ctx.arc(options.offset.x + (x + 0.5) * options.scale, options.offset.y + (y + 0.5) * options.scale, options.user_diameter, 0, Math.PI*2, true);
+		ctx.closePath();
+		ctx.fill();
 	}
 	
 	this.getSteps = function() {
