@@ -4,7 +4,7 @@
 	<title>Maze</title>
 	<meta charset="utf-8" />
 	<link rel="stylesheet" href="css/maze.css" />
-	<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery/jquery-1.6.min.js"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
 	<script type="text/javascript" src="js/maze.js"></script>
 	<meta name="viewport" content="initial-scale=1.0;  maximum-scale=1.0;" />
 	<script>
@@ -28,26 +28,26 @@
 		$(document).ready(function () {
 			mazeGame = new MazeGame(document.getElementById('maze'), mazeOptions);
 			
-			$("#f").submit(function () {
+			$("form").on('submit', function () {
 				mazeOptions.level_size = [$('#w').val(), $('#h').val()];
 				mazeGame = new MazeGame(document.getElementById('maze'), mazeOptions);
 				$('#options, #end-game').hide();
 				return false;
 			});
-			$('#h, #options').bind('keypress', function (e) {
+			$('body').on('keypress', '#h, #options', function (e) {
 				return (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) ? false : true;
+			})
+			$(window).on('click', function(e){
+				if (!$(e.target).is("#options") && $(e.target).parents('#options').length == 0)
+					$('#options').hide();
 			});
-			$('a[href=#options]').click(function(){
+			$('a[href=#options]').on('click', function(){
 				center($('#options').show());
-				return false;
-			});
-			$('a[href=#close]').click(function(){
-				$('#options').hide();
 				return false;
 			});
 		});
 		
-		$(window).keydown(function (e) {
+		$(window).on('keydown', function (e) {
 			var keyCode = e.keyCode || e.which,
 				keyCodes = {
 					37: "left",
@@ -66,8 +66,6 @@
 				$('#options button:visible:last').trigger('click');
 				return false;
 			}
-		}).resize(function () {
-			center($("#options"));
 		});
 		
 		function center(e) {
@@ -103,7 +101,7 @@
 			<fieldset><label for="w">Width</label>
 			<input id="w" type="number" min="2" step="1" value="10" /></fieldset>
 			<fieldset><label for="h">Height</label><input id="h" type="number" min="2" step="1" value="10" /></fieldset>
-			<button type="submit">Generate Maze</button> or <a href="#close">close dialog</a>
+			<button type="submit">Generate Maze</button>
 		</form>
 	</div>
 </body>
