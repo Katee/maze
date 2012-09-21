@@ -46,13 +46,13 @@ h1 {
 	display:none;
 	position:absolute;
 	background:0;
-	color:#000;
+	color:#fff;
 	text-align:center;
+  left:0;
+  width:100%;
+  padding:2em 0;
 	box-shadow:0 2px 8px rgba(0,0,0,.5);
-	-moz-box-shadow:0 2px 8px rgba(0,0,0,.5);
-	-webkit-box-shadow:0 2px 8px rgba(0,0,0,.5);
-	padding:20px;
-	background: rgba(255,255,255,.95);
+	background:rgba(0,0,0,.85);
 }
 	#options h2 {
 		margin-top:0;
