@@ -7,7 +7,7 @@ function MazeGame(canvas, options) {
 			visited_block: "#d7edff"
 		},
 		starting_position: { x: 0, y: 0 },
-		level_size: [10, 10],
+		level_size: [16, 10],
 		offset: {x: 0, y: 0},
 		scale: 26,
 		user_diameter: 4,
