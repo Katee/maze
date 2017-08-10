@@ -165,7 +165,7 @@ function MazeGame(canvas, options) {
 			var visitedStack = [current_cell];
 			
 			while (visitedStack.length !== 0) {
-				if (this.isDeadEnd(current_cell.x, current_cell.y) || this.isEnd(current_cell.x, current_cell.y) || this.isStart(current_cell.x, current_cell.y)) {
+				if (this.isDeadEnd(current_cell.x, current_cell.y)) {
 					current_cell = visitedStack.pop();
 				} else {
 					next_cell = this.randomNeighbor(current_cell.x, current_cell.y);
