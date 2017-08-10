@@ -109,6 +109,9 @@ function MazeGame(canvas, options) {
 		this.randomNeighbor = function (x, y) {
 			return rand.pickRand(this.availableNeighbors(x, y));
 		};
+		this.randomCell = function() {
+			return this.getCell(rand.randomInt(this.width), rand.randomInt(this.height));
+		};
 		this.breakWall = function (c1, c2) {
 			if (c1.x == c2.x) {
 				if (c1.y < c2.y) {
@@ -155,7 +158,7 @@ function MazeGame(canvas, options) {
 			return false;
 		};
 		this.generateMaze = function () {
-			this.c = this.getCell(rand.randomInt(this.width), rand.randomInt(this.height));
+			this.c = this.randomCell();
 			this.c.visited = true;
 			this.mazeDo();
 			while (this.stack.length !== 0) {
