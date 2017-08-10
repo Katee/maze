@@ -70,9 +70,6 @@ function MazeGame(canvas, options) {
 			x: this.width - 1,
 			y: this.height - 1
 		};
-		this.c;
-		this.nextC;
-		this.stack = [];
 		this.initMaze = function () {
 			for (y = 0; y < height; y++) {
 				this.m.push(new Array());
@@ -108,6 +105,9 @@ function MazeGame(canvas, options) {
 		};
 		this.randomNeighbor = function (x, y) {
 			return rand.pickRand(this.availableNeighbors(x, y));
+		};
+		this.randomCell = function() {
+			return this.getCell(rand.randomInt(this.width), rand.randomInt(this.height));
 		};
 		this.breakWall = function (c1, c2) {
 			if (c1.x == c2.x) {
@@ -154,25 +154,27 @@ function MazeGame(canvas, options) {
 			if (this.end.x === x && this.end.y === y) return true;
 			return false;
 		};
+		/* Generate the maze using recursive backtracking
+		*  https://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_backtracker
+		*/
 		this.generateMaze = function () {
-			this.c = this.getCell(rand.randomInt(this.width), rand.randomInt(this.height));
-			this.c.visited = true;
-			this.mazeDo();
-			while (this.stack.length !== 0) {
-				if (this.isDeadEnd(this.c.x, this.c.y) || this.isEnd(this.c.x, this.c.y) || this.isStart(this.c.x, this.c.y)) {
-					this.nextC = this.stack.pop();
-					this.c = this.nextC;
+			var current_cell = this.randomCell();
+			var next_cell = null;
+			
+			current_cell.visited = true;
+			var visitedStack = [current_cell];
+			
+			while (visitedStack.length > 0) {
+				if (this.isDeadEnd(current_cell.x, current_cell.y)) {
+					current_cell = visitedStack.pop();
 				} else {
-					this.mazeDo();
+					next_cell = this.randomNeighbor(current_cell.x, current_cell.y);
+					next_cell.visited = true;
+					this.breakWall(current_cell, next_cell);
+					visitedStack.push(current_cell);
+					current_cell = next_cell;
 				}
 			}
-		};
-		this.mazeDo = function () {
-			this.nextC = this.randomNeighbor(this.c.x, this.c.y);
-			this.nextC.visited = true;
-			this.breakWall(this.c, this.nextC);
-			this.stack.push(this.c);
-			this.c = this.nextC;
 		};
 		this.initMaze();
 		this.generateMaze();
