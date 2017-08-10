@@ -164,7 +164,7 @@ function MazeGame(canvas, options) {
 			current_cell.visited = true;
 			var visitedStack = [current_cell];
 			
-			while (visitedStack.length !== 0) {
+			while (visitedStack.length > 0) {
 				if (this.isDeadEnd(current_cell.x, current_cell.y)) {
 					current_cell = visitedStack.pop();
 				} else {
