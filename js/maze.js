@@ -157,6 +157,9 @@ function MazeGame(canvas, options) {
 			if (this.end.x === x && this.end.y === y) return true;
 			return false;
 		};
+		/* Generate the maze using recursive backtracking
+		*  https://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_backtracker
+		*/
 		this.generateMaze = function () {
 			this.c = this.randomCell();
 			this.c.visited = true;
