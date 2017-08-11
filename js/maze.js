@@ -9,16 +9,16 @@ class Cell {
 		this.y = y;
 	}
 }
-	
+
 class Rand {
-	randomInt(x) {
+	static randomInt(x) {
 		return Math.floor(Math.random() * x);
 	}
-	pickRand(al) {
+	static pickRand(al) {
 		return al[this.randomInt(al.length)];
 	}
 }
-	
+
 class Maze {
 	constructor(width, height, start) {
 		this.m = [];
@@ -29,7 +29,6 @@ class Maze {
 			x: this.width - 1,
 			y: this.height - 1
 		};
-		this.rand = new Rand();
 		this.initMaze();
 		this.generateMaze();
 	}
@@ -67,10 +66,10 @@ class Maze {
 		return list;
 	};
 	randomNeighbor(x, y) {
-		return this.rand.pickRand(this.availableNeighbors(x, y));
+		return Rand.pickRand(this.availableNeighbors(x, y));
 	};
 	randomCell() {
-		return this.getCell(this.rand.randomInt(this.width), this.rand.randomInt(this.height));
+		return this.getCell(Rand.randomInt(this.width), Rand.randomInt(this.height));
 	};
 	breakWall(c1, c2) {
 		if (c1.x == c2.x) {
@@ -182,8 +181,6 @@ class MazeGame {
 			"down"	:	{ x: 0, y: 1 }
 		};
 
-		this.rand = new Rand();
-	
 		this.init();
 	}
 	
