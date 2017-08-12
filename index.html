@@ -8,39 +8,30 @@
 	<script type="text/javascript" src="js/maze.js"></script>
 	<meta name="viewport" content="initial-scale=1, maximum-scale=1" />
 	<script>
-		var mazeGame;
-		var time, timer, startTime;
-		var mazeOptions = {
-			onGameEnd: function(didWin){
-				clearInterval(timer);
-				gameInProgress = false;
-				center($("#options").show());
-			},
-			onStart: function(){
-				startTime = new Date();
-				timer = setInterval(timeTick, 100);
-				showTime();
-				showSteps();
-			}
-		}
+		let timer, mazeGame;
 		
 		$(document).ready(function () {
 			let canvasElement = document.getElementById('maze');
-			mazeGame = new MazeGame(canvasElement, mazeOptions);
+			mazeGame = new MazeGame(canvasElement, {});
+			startTick();
 			
 			$("form").on('submit', function () {
-				mazeOptions.dimensions = [$('#w').val(), $('#h').val()];
-				mazeGame = new MazeGame(canvasElement, mazeOptions);
+				let dimensions = [$('#w').val(), $('#h').val()];
+				mazeGame = new MazeGame(canvasElement, { dimensions });
+				startTick();
 				$('#options, #end-game').hide();
 				return false;
 			});
+
 			$('body').on('keypress', '#h, #options', function (e) {
 				return (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) ? false : true;
 			})
+
 			$(window).on('click', function(e){
 				if (!$(e.target).is("#options") && $(e.target).parents('#options').length == 0)
 					$('#options').hide();
 			});
+
 			$('a[href=#options]').on('click', function(){
 				center($('#options').show());
 				return false;
@@ -48,8 +39,8 @@
 		});
 		
 		$(window).on('keydown', function (e) {
-			var keyCode = e.keyCode || e.which,
-				keyCodes = {
+			let keyCode = e.keyCode || e.which;
+			let keyCodes = {
 					37: "left",
 					38: "up",
 					39: "right",
@@ -59,6 +50,7 @@
 					68: "right",
 					83: "down"
 				};
+
 			if (keyCodes[keyCode] !== null && keyCodes[keyCode] !== undefined) {
 				// send arrow keys and wsad to game
 				mazeGame.move(keyCodes[keyCode]);
@@ -77,21 +69,16 @@
 		function center(e) {
 			e.css('top', $("#maze").offset().top + $("#maze").height() / 2 - e.outerHeight() / 2)
 		}
-		
-		function showTime() {
-			deltaTime = Math.floor(((new Date).getTime() - startTime.getTime()) / 1000);
-			$("#time").html(deltaTime + " second" + (deltaTime !== 1 ? "s" : ""));
+
+		function startTick() {
+			if (timer) {
+				clearInterval(timer);
+			}
+			timer = setInterval(tick, 100);
 		}
-		
-		function showSteps() {
-			var steps = 0
-			if (mazeGame != undefined)
-				steps = mazeGame.getSteps()
-			$("#steps").html(steps + " step" + (steps !== 1 ? "s" : ""));
-		}
-		
-		function timeTick() {
-			showTime();
+
+		function tick() {
+			mazeGame.ui.drawTimer();
 		}
 	</script>
 </head>

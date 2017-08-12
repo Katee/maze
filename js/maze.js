@@ -131,6 +131,7 @@ class MazeGameState {
 		this.height = height;
 		this.currentPos = startPosition;
 		this.path = [this.currentPos];
+		this.startTime = null;
 		this.gameInProgress = false;
 
 		this.start = startPosition;
@@ -162,6 +163,17 @@ class MazeGameState {
 		}
 		return false;
 	}
+	
+	get numSteps() {
+		// subtract one to account for the current positon being part of the path
+		return this.path.length - 1;
+	}
+
+	get playTime() {
+		if (this.startTime) {
+			return (new Date()).getTime() - this.startTime.getTime();
+		}
+	}
 }
 
 class MazeGame {
@@ -169,10 +181,7 @@ class MazeGame {
 		let defaultOptions = {
 			ui: {},
 			startPosition: { x: 0, y: 0 },
-			dimensions: [16, 10],
-			onStart: function(){},
-			onGameEnd: function(){},
-			onMove: function(){}
+			dimensions: [16, 10]
 		}
 
 		this.offsets = {
@@ -188,12 +197,13 @@ class MazeGame {
 		this.state = new MazeGameState(this.options.dimensions, this.options.startPosition);
 		this.ui = new MazeUi(this.state, options.ui, canvas);
 		this.ui.center();
+
 		this.start();
 	}
 	
 	start() {
 		this.state.gameInProgress = true;
-		this.options.onStart();
+		this.state.startTime = new Date();
 	}
 	
 	move(direction) {
@@ -207,15 +217,16 @@ class MazeGame {
 				this.state.currentPos = newPos;
 				this.ui.update()
 				if (this.state.isEndCell(newPos)) {
-					this.options.onGameEnd(true);
+					this.onGameEnd();
 				}
 			}
 		}
 	}
-	
-	getSteps() {
-		// subtract one to account for the current positon being part of the path
-		return this.state.path.length - 1;
+
+	onGameEnd() {
+		this.state.gameInProgress = false;
+		clearInterval(timer);
+		center($("#options").show());
 	}
 }
 
@@ -243,8 +254,11 @@ class MazeUi {
 	}
 
 	update() {
-		this.draw();
-		showSteps() // TODO don't reference external function
+		this.clear();
+		this.drawPath();
+		this.drawMaze();
+		this.drawSteps()
+		this.drawTimer()
 	}
 
 	center() {
@@ -257,17 +271,20 @@ class MazeUi {
 		$("#a").width(this.state.width * this.options.scale + 3).css('padding-top', (this.canvas.height / 2) - (this.state.height * this.options.scale / 2) - $('h1').height());
 
 		$("#time, #steps").css('margin-top', this.state.height * this.options.scale);
-		this.draw();
+		this.update();
 	}
 
 	clear() {
 		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
 
-	draw() {
-		this.clear();
-		this.drawPath();
-		this.drawMaze();
+	drawSteps() {
+		$("#steps").html(this.state.numSteps + " step" + (steps !== 1 ? "s" : ""));
+	}
+
+	drawTimer() {
+		let playTimeSeconds = Math.floor((this.state.playTime || 0) / 1000)
+		$("#time").html(playTimeSeconds + " second" + (playTimeSeconds !== 1 ? "s" : ""));
 	}
 
 	drawPath() {
