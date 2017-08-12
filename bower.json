@@ -1,0 +1,21 @@
+{
+  "name": "maze",
+  "homepage": "https://github.com/Katee/maze",
+  "authors": [
+    "katee <hello@kate.io>"
+  ],
+  "description": "",
+  "main": "index.html",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^3.2.1"
+  }
+}
