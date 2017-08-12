@@ -29,7 +29,7 @@
 			mazeGame = new MazeGame(canvasElement, mazeOptions);
 			
 			$("form").on('submit', function () {
-				mazeOptions.level_size = [$('#w').val(), $('#h').val()];
+				mazeOptions.dimensions = [$('#w').val(), $('#h').val()];
 				mazeGame = new MazeGame(canvasElement, mazeOptions);
 				$('#options, #end-game').hide();
 				return false;

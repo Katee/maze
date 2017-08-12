@@ -36,21 +36,21 @@ class MazeGenerator {
 			}
 		}
 
-		let current_cell = this.randomCell();
-		let next_cell = null;
+		let cell = this.randomCell();
+		let nextCell = null;
 		
-		current_cell.visited = true;
-		let visitedStack = [current_cell];
+		cell.visited = true;
+		let visitedStack = [cell];
 		
 		while (visitedStack.length > 0) {
-			if (this.isDeadEnd(current_cell.x, current_cell.y)) {
-				current_cell = visitedStack.pop();
+			if (this.isDeadEnd(cell.x, cell.y)) {
+				cell = visitedStack.pop();
 			} else {
-				next_cell = this.randomNeighbor(current_cell.x, current_cell.y);
-				next_cell.visited = true;
-				this.breakWall(current_cell, next_cell);
-				visitedStack.push(current_cell);
-				current_cell = next_cell;
+				nextCell = this.randomNeighbor(cell.x, cell.y);
+				nextCell.visited = true;
+				this.breakWall(cell, nextCell);
+				visitedStack.push(cell);
+				cell = nextCell;
 			}
 		}
 	}
@@ -166,10 +166,10 @@ class MazeGameState {
 
 class MazeGame {
 	constructor(canvas, options) {
-		let default_options = {
+		let defaultOptions = {
 			ui: {},
-			starting_position: { x: 0, y: 0 },
-			level_size: [16, 10],
+			startPosition: { x: 0, y: 0 },
+			dimensions: [16, 10],
 			onStart: function(){},
 			onGameEnd: function(){},
 			onMove: function(){}
@@ -183,9 +183,9 @@ class MazeGame {
 		};
 
 		// TODO: don't use jQuery here
-		this.options = $.extend({}, default_options, options);
+		this.options = $.extend({}, defaultOptions, options);
 
-		this.state = new MazeGameState(this.options.level_size, this.options.starting_position);
+		this.state = new MazeGameState(this.options.dimensions, this.options.startPosition);
 		this.ui = new MazeUi(this.state, options.ui, canvas);
 		this.ui.center();
 		this.start();
@@ -228,14 +228,14 @@ class MazeUi {
 		let defaultOptions = {
 			colors: {
 				walls: "#ee4646",
-				current_position: "#67b9e8",
+				curPosition: "#67b9e8",
 				finish: "#65c644",
-				visited_block: "#d7edff"
+				visitedBlock: "#d7edff"
 			},
 			offset: {x: 0, y: 0}, // top left corner where the maze is actually drawn
 			scale: 26,
-			user_diameter: 4,
-			user_path_width: 8,
+			curIndicatorDiameter: 4,
+			pathWidth: 8,
 		}
 
 		// TODO: don't use jQuery here
@@ -271,8 +271,8 @@ class MazeUi {
 	}
 
 	drawPath() {
-		this.ctx.lineWidth = this.options.user_path_width;
-		this.ctx.strokeStyle = this.options.colors.visited_block;
+		this.ctx.lineWidth = this.options.pathWidth;
+		this.ctx.strokeStyle = this.options.colors.visitedBlock;
 		this.ctx.beginPath();
 		this.ctx.moveTo(this.options.offset.x + 0.5 * this.options.scale, 0);
 		for (let i = 0; i < this.state.path.length - 1; i++) {
@@ -281,7 +281,7 @@ class MazeUi {
 		}
 		this.ctx.lineTo(this.options.offset.x + (this.state.currentPos.x + 0.5) * this.options.scale, this.options.offset.y + (this.state.currentPos.y + 0.5) * this.options.scale);
 		this.ctx.stroke();
-		this.circle(this.state.currentPos.x, this.state.currentPos.y, this.options.colors.current_position);
+		this.circle(this.state.currentPos.x, this.state.currentPos.y, this.options.colors.curPosition);
 	}
 
 	drawMaze() {
@@ -316,7 +316,7 @@ class MazeUi {
 	circle(x, y, color) {
 		this.ctx.fillStyle = color;
 		this.ctx.beginPath();
-		this.ctx.arc(this.options.offset.x + (x + 0.5) * this.options.scale, this.options.offset.y + (y + 0.5) * this.options.scale, this.options.user_diameter, 0, Math.PI*2, true);
+		this.ctx.arc(this.options.offset.x + (x + 0.5) * this.options.scale, this.options.offset.y + (y + 0.5) * this.options.scale, this.options.curIndicatorDiameter, 0, Math.PI*2, true);
 		this.ctx.closePath();
 		this.ctx.fill();
 	}
