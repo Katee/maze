@@ -19,45 +19,61 @@ class Cell {
 	}
 }
 
-
-class Maze {
-	constructor(width, height, start) {
-		this.m = [];
+/* Generate the maze using recursive backtracking
+*  https://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_backtracker
+*/
+class MazeGenerator {
+	constructor(width, height, start, end) {
 		this.width = width;
 		this.height = height;
-		this.start = start;
-		this.end = {
-			x: this.width - 1,
-			y: this.height - 1
-		};
-		this.initMaze();
-		this.generateMaze();
-	}
-	initMaze() {
-		for (let y = 0; y < this.height; y++) {
-			this.m.push([]);
-			for (let x = 0; x < this.width; x++) {
-				this.m[y].push(new Cell(x, y));
+		this.board = [];
+
+		// generate cells with walls everywhere
+		for (let x = 0; x < this.width; x++) {
+			this.board.push([]);
+			for (let y = 0; y < this.height; y++) {
+				this.board[x].push(new Cell(x, y));
 			}
 		}
-	};
+
+		let current_cell = this.randomCell();
+		let next_cell = null;
+		
+		current_cell.visited = true;
+		let visitedStack = [current_cell];
+		
+		while (visitedStack.length > 0) {
+			if (this.isDeadEnd(current_cell.x, current_cell.y)) {
+				current_cell = visitedStack.pop();
+			} else {
+				next_cell = this.randomNeighbor(current_cell.x, current_cell.y);
+				next_cell.visited = true;
+				this.breakWall(current_cell, next_cell);
+				visitedStack.push(current_cell);
+				current_cell = next_cell;
+			}
+		}
+	}
+
 	getNeighbors(x, y) {
 		var n = [];
-		var c = this.getCell(x, y);
+
 		if (y != 0) {
-			n.push(this.getCell(x, y - 1));
+			n.push(this.board[x][y - 1]);
 		}
 		if (y != this.height - 1) {
-			n.push(this.getCell(x, y + 1));
+			n.push(this.board[x][y + 1]);
 		}
 		if (x != 0) {
-			n.push(this.getCell(x - 1, y));
+			n.push(this.board[x - 1][y]);
 		}
 		if (x != this.width - 1) {
-			n.push(this.getCell(x + 1, y));
+			n.push(this.board[x + 1][y]);
 		}
+
 		return n;
-	};
+	}
+
 	availableNeighbors(x, y) {
 		var list = [];
 		var neighbors = this.getNeighbors(x, y);
@@ -65,13 +81,16 @@ class Maze {
 			if (!neighbors[i].visited) list.push(neighbors[i]);
 		}
 		return list;
-	};
+	}
+
 	randomNeighbor(x, y) {
 		return Rand.pickRand(this.availableNeighbors(x, y));
-	};
+	}
+
 	randomCell() {
-		return this.getCell(Rand.randomInt(this.width), Rand.randomInt(this.height));
-	};
+		return this.board[Rand.randomInt(this.width)][Rand.randomInt(this.height)];
+	}
+
 	breakWall(c1, c2) {
 		if (c1.x == c2.x) {
 			if (c1.y < c2.y) {
@@ -92,63 +111,56 @@ class Maze {
 				c2.right = false;
 			}
 		}
-	};
-	getCell(x, y) {
-		return this.m[y][x];
-	};
-	inBounds(x, y) {
-		if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-			return true;
-		}
-		return false;
-	};
+	}
+
 	isDeadEnd(x, y) {
 		var neighbors = this.getNeighbors(x, y);
 		for (let i = 0; i < neighbors.length; i++) {
 			if (!neighbors[i].visited) return false;
 		}
 		return true;
-	};
-	isStart(x, y) {
-		if (this.start.x === x && this.start.y === y) return true;
-		return false;
-	};
-	isEnd(x, y) {
-		if (this.end.x === x && this.end.y === y) return true;
-		return false;
-	};
-	/* Generate the maze using recursive backtracking
-	*  https://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_backtracker
-	*/
-	generateMaze() {
-		var current_cell = this.randomCell();
-		var next_cell = null;
-		
-		current_cell.visited = true;
-		var visitedStack = [current_cell];
-		
-		while (visitedStack.length > 0) {
-			if (this.isDeadEnd(current_cell.x, current_cell.y)) {
-				current_cell = visitedStack.pop();
-			} else {
-				next_cell = this.randomNeighbor(current_cell.x, current_cell.y);
-				next_cell.visited = true;
-				this.breakWall(current_cell, next_cell);
-				visitedStack.push(current_cell);
-				current_cell = next_cell;
-			}
-		}
-	};
+	}
 }
 
 class MazeGameState {
-	constructor(mazeDimensions, startingPosition) {
-		this.currentPos = startingPosition;
+	constructor(mazeDimensions, startPosition) {
+		const [ width, height ] = mazeDimensions;
+
+		this.width = width;
+		this.height = height;
+		this.currentPos = startPosition;
 		this.path = [this.currentPos];
 		this.gameInProgress = false;
 
-		const [ height, width ] = mazeDimensions;
-		this.maze = new Maze(height, width, this.currentPos);
+		this.start = startPosition;
+		this.end = {
+			x: this.width - 1,
+			y: this.height - 1
+		};
+
+		this.board = new MazeGenerator(this.width, this.height, this.start, this.end).board;
+		console.log(this.board)
+	}
+
+	getCell(x, y) {
+		return this.board[x][y];
+	};
+
+	isStartCell(cell) {
+		if (this.start.x === cell.x && this.start.y === cell.y) return true;
+		return false;
+	}
+
+	isEndCell(cell) {
+		if (this.end.x === cell.x && this.end.y === cell.y) return true;
+		return false;
+	}
+
+	isCellInBounds(x, y) {
+		if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+			return true;
+		}
+		return false;
 	}
 }
 
@@ -189,12 +201,12 @@ class MazeGame {
 			x: this.state.currentPos.x + this.offsets[direction].x,
 			y: this.state.currentPos.y + this.offsets[direction].y
 		};
-		if (this.state.gameInProgress && this.state.maze.inBounds(newPos.x, newPos.y)) {
-			if (this.state.maze.getCell(this.state.currentPos.x, this.state.currentPos.y)[direction] === false) {
+		if (this.state.gameInProgress && this.state.isCellInBounds(newPos.x, newPos.y)) {
+			if (this.state.getCell(this.state.currentPos.x, this.state.currentPos.y)[direction] === false) {
 				this.state.path.push(newPos);
 				this.state.currentPos = newPos;
 				this.ui.update()
-				if (this.state.maze.isEnd(newPos.x, newPos.y)) {
+				if (this.state.isEndCell(newPos)) {
 					this.options.onGameEnd(true);
 				}
 			}
@@ -240,11 +252,11 @@ class MazeUi {
 		this.canvas.width = $body.width();
 		this.canvas.height = $body.height();
 
-		this.options.offset.x = Math.floor((this.canvas.width / 2) - (this.state.maze.width * this.options.scale / 2));
-		this.options.offset.y = Math.floor((this.canvas.height / 2) - (this.state.maze.height * this.options.scale / 2));
-		$("#a").width(this.state.maze.width * this.options.scale + 3).css('padding-top', (this.canvas.height / 2) - (this.state.maze.height * this.options.scale / 2) - $('h1').height());
+		this.options.offset.x = Math.floor((this.canvas.width / 2) - (this.state.width * this.options.scale / 2));
+		this.options.offset.y = Math.floor((this.canvas.height / 2) - (this.state.height * this.options.scale / 2));
+		$("#a").width(this.state.width * this.options.scale + 3).css('padding-top', (this.canvas.height / 2) - (this.state.height * this.options.scale / 2) - $('h1').height());
 
-		$("#time, #steps").css('margin-top', this.state.maze.height * this.options.scale);
+		$("#time, #steps").css('margin-top', this.state.height * this.options.scale);
 		this.draw();
 	}
 
@@ -273,22 +285,23 @@ class MazeUi {
 	}
 
 	drawMaze() {
-		this.circle(this.state.maze.end.x, this.state.maze.end.y, this.options.colors.finish);
-		for (let y = 0; y < this.state.maze.height; y++) {
-			for (let x = 0; x < this.state.maze.width; x++) {
-				this.drawCell(x, y);
+		this.circle(this.state.end.x, this.state.end.y, this.options.colors.finish);
+
+		for (let x = 0; x < this.state.width; x++) {
+			for (let y = 0; y < this.state.height; y++) {
+				let cell = this.state.getCell(x, y);
+				this.drawCell(cell);
 			}
 		}
 	}
 
-	drawCell(x, y) {
-		var curCell = this.state.maze.getCell(x, y);
-		var originx = x * this.options.scale;
-		var originy = y * this.options.scale;
-		if (curCell.up && !this.state.maze.isStart(curCell.x, curCell.y)) this.line(originx, originy, originx + this.options.scale, originy);
-		if (curCell.down && !this.state.maze.isEnd(curCell.x, curCell.y)) this.line(originx, originy + this.options.scale, originx + this.options.scale, originy + this.options.scale);
-		if (curCell.right) this.line(originx + this.options.scale, originy, originx + this.options.scale, originy + this.options.scale);
-		if (curCell.left) this.line(originx, originy, originx, originy + this.options.scale);
+	drawCell(cell) {
+		var originx = cell.x * this.options.scale;
+		var originy = cell.y * this.options.scale;
+		if (cell.up && !this.state.isStartCell(cell)) this.line(originx, originy, originx + this.options.scale, originy);
+		if (cell.down && !this.state.isEndCell(cell)) this.line(originx, originy + this.options.scale, originx + this.options.scale, originy + this.options.scale);
+		if (cell.right) this.line(originx + this.options.scale, originy, originx + this.options.scale, originy + this.options.scale);
+		if (cell.left) this.line(originx, originy, originx, originy + this.options.scale);
 	}
 
 	line(x1, y1, x2, y2) {
