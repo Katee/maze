@@ -1,102 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>Maze</title>
-	<meta charset="utf-8" />
-	<link rel="stylesheet" href="css/maze.css" />
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
-	<script type="text/javascript" src="js/maze.js"></script>
-	<meta name="viewport" content="initial-scale=1, maximum-scale=1" />
-	<script>
-		let timer, mazeGame;
-		
-		$(document).ready(function () {
-			let canvasElement = document.getElementById('maze');
-			mazeGame = new MazeGame(canvasElement, {});
-			startTick();
-			
-			$("form").on('submit', function () {
-				let dimensions = [$('#w').val(), $('#h').val()];
-				mazeGame = new MazeGame(canvasElement, { dimensions });
-				startTick();
-				$('#options, #end-game').hide();
-				return false;
-			});
+  <title>Maze</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="css/maze.css" />
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+  <script type="text/javascript" src="js/maze.js"></script>
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
+  <script>
+    let timer, mazeGame;
 
-			$('body').on('keypress', '#h, #options', function (e) {
-				return (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) ? false : true;
-			})
+    $(document).ready(function () {
+      let canvasElement = document.getElementById('maze');
+      mazeGame = new MazeGame(canvasElement, {});
+      startTick();
 
-			$(window).on('click', function(e){
-				if (!$(e.target).is("#options") && $(e.target).parents('#options').length == 0)
-					$('#options').hide();
-			});
+      $("form").on('submit', function () {
+        let dimensions = [$('#w').val(), $('#h').val()];
+        mazeGame = new MazeGame(canvasElement, { dimensions });
+        startTick();
+        $('#options, #end-game').hide();
+        return false;
+      });
 
-			$('a[href=#options]').on('click', function(){
-				center($('#options').show());
-				return false;
-			});
-		});
-		
-		$(window).on('keydown', function (e) {
-			let keyCode = e.keyCode || e.which;
-			let keyCodes = {
-					37: "left",
-					38: "up",
-					39: "right",
-					40: "down",
-					65: "left",
-					87: "up",
-					68: "right",
-					83: "down"
-				};
+      $('body').on('keypress', '#h, #options', function (e) {
+        return (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) ? false : true;
+      })
 
-			if (keyCodes[keyCode] !== null && keyCodes[keyCode] !== undefined) {
-				// send arrow keys and wsad to game
-				mazeGame.move(keyCodes[keyCode]);
-				return false;
-			} else if (keyCode === 27) {
-				// close options on escape
-				$('#options').hide();
-				return false;
-			}
-		});
+      $(window).on('click', function(e){
+        if (!$(e.target).is("#options") && $(e.target).parents('#options').length == 0)
+          $('#options').hide();
+      });
 
-		$(window).on('resize', function(){
-			mazeGame.ui.center();
-		});
+      $('a[href=#options]').on('click', function(){
+        center($('#options').show());
+        return false;
+      });
+    });
 
-		function center(e) {
-			e.css('top', $("#maze").offset().top + $("#maze").height() / 2 - e.outerHeight() / 2)
-		}
+    $(window).on('keydown', function (e) {
+      let keyCode = e.keyCode || e.which;
+      let keyCodes = {
+          37: "left",
+          38: "up",
+          39: "right",
+          40: "down",
+          65: "left",
+          87: "up",
+          68: "right",
+          83: "down"
+        };
 
-		function startTick() {
-			if (timer) {
-				clearInterval(timer);
-			}
-			timer = setInterval(tick, 100);
-		}
+      if (keyCodes[keyCode] !== null && keyCodes[keyCode] !== undefined) {
+        // send arrow keys and wsad to game
+        mazeGame.move(keyCodes[keyCode]);
+        return false;
+      } else if (keyCode === 27) {
+        // close options on escape
+        $('#options').hide();
+        return false;
+      }
+    });
 
-		function tick() {
-			mazeGame.ui.drawTimer();
-		}
-	</script>
+    $(window).on('resize', function(){
+      mazeGame.ui.center();
+    });
+
+    function center(e) {
+      e.css('top', $("#maze").offset().top + $("#maze").height() / 2 - e.outerHeight() / 2)
+    }
+
+    function startTick() {
+      if (timer) {
+        clearInterval(timer);
+      }
+      timer = setInterval(tick, 100);
+    }
+
+    function tick() {
+      mazeGame.ui.drawTimer();
+    }
+  </script>
 </head>
 <body>
-	<canvas id="maze">Sorry your browser doesn't support the canvas element. Try upgrading your browser.</canvas>
-	<div id="a">
-		<h1>Maze<span> <a href="#options">options</a></span></h1>
-		<div id="time"></div><div id="steps"></div>
-	</div>
-	<div id="options">
-		<form>
-			<label for="w">Width</label>
-			<label for="h">Height</label>
-			<input id="w" type="number" min="2" step="1" value="16" />
-			by
-			<input id="h" type="number" min="2" step="1" value="10" />
-			<button type="submit">Generate Maze</button>
-		</form>
-	</div>
+  <canvas id="maze">Sorry your browser doesn't support the canvas element. Try upgrading your browser.</canvas>
+  <div id="a">
+    <h1>Maze<span> <a href="#options">options</a></span></h1>
+    <div id="time"></div><div id="steps"></div>
+  </div>
+  <div id="options">
+    <form>
+      <label for="w">Width</label>
+      <label for="h">Height</label>
+      <input id="w" type="number" min="2" step="1" value="16" />
+      by
+      <input id="h" type="number" min="2" step="1" value="10" />
+      <button type="submit">Generate Maze</button>
+    </form>
+  </div>
 </body>
 </html>
