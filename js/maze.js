@@ -1,3 +1,12 @@
+class Rand {
+	static randomInt(x) {
+		return Math.floor(Math.random() * x);
+	}
+	static pickRand(al) {
+		return al[this.randomInt(al.length)];
+	}
+}
+
 class Cell {
 	constructor(x, y) {
 		this.visited = false;
@@ -10,14 +19,6 @@ class Cell {
 	}
 }
 
-class Rand {
-	static randomInt(x) {
-		return Math.floor(Math.random() * x);
-	}
-	static pickRand(al) {
-		return al[this.randomInt(al.length)];
-	}
-}
 
 class Maze {
 	constructor(width, height, start) {
