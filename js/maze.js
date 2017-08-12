@@ -1,48 +1,14 @@
-function MazeGame(canvas, options) {
-	var default_options = {
-		colors: {
-			walls: "#ee4646",
-			current_position: "#67b9e8",
-			finish: "#65c644",
-			visited_block: "#d7edff"
-		},
-		starting_position: { x: 0, y: 0 },
-		level_size: [16, 10],
-		offset: {x: 0, y: 0},
-		scale: 26,
-		user_diameter: 4,
-		user_path_width: 8,
-		onStart: function(){},
-		onGameEnd: function(){},
-		onMove: function(){}
+class Rand {
+	static randomInt(x) {
+		return Math.floor(Math.random() * x);
 	}
-	
-	// todo: don't use jQuery here
-	options = $.extend({}, default_options, options);
-
-	$(window).on('resize', center);
-	
-	var ctx, currentPos, maze, path, gameInProgress;
-	var offsets = {
-		"left"	:	{ x: -1, y: 0 },
-		"up"	:	{ x: 0, y:	-1 },
-		"right"	:	{ x: 1, y: 0 },
-		"down"	:	{ x: 0, y: 1 }
-	};
-
-	var rand = new Rand();
-	
-	this.init = function() {
-		if (canvas.getContext) {
-			ctx = canvas.getContext("2d");
-			setup(options.level_size[0], options.level_size[1]);
-			start();
-		}
+	static pickRand(al) {
+		return al[this.randomInt(al.length)];
 	}
-	
-	this.init();
-	
-	function Cell(x, y) {
+}
+
+class Cell {
+	constructor(x, y) {
 		this.visited = false;
 		this.up = true;
 		this.right = true;
@@ -51,235 +17,324 @@ function MazeGame(canvas, options) {
 		this.x = x;
 		this.y = y;
 	}
-	
-	function Rand() {
-		this.randomInt = function (x) {
-			return Math.floor(Math.random() * x);
-		};
-		this.pickRand = function (al) {
-			return al[this.randomInt(al.length)];
-		};
-	}
-	
-	function Maze(width, height) {
-		this.m = [];
+}
+
+/* Generate the maze using recursive backtracking.
+ * Returns a 2D array of Cells
+ * https://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_backtracker
+ */
+class MazeGenerator {
+	constructor(width, height, start, end) {
 		this.width = width;
 		this.height = height;
-		this.start = options.starting_position;
+		this.board = [];
+
+		// generate cells with walls everywhere
+		for (let x = 0; x < this.width; x++) {
+			this.board.push([]);
+			for (let y = 0; y < this.height; y++) {
+				this.board[x].push(new Cell(x, y));
+			}
+		}
+
+		let cell = this.randomCell();
+		let nextCell = null;
+		
+		cell.visited = true;
+		let visitedStack = [cell];
+		
+		while (visitedStack.length > 0) {
+			if (this.isDeadEnd(cell.x, cell.y)) {
+				cell = visitedStack.pop();
+			} else {
+				nextCell = this.randomNeighbor(cell.x, cell.y);
+				nextCell.visited = true;
+				this.breakWall(cell, nextCell);
+				visitedStack.push(cell);
+				cell = nextCell;
+			}
+		}
+	}
+
+	getNeighbors(x, y) {
+		var n = [];
+
+		if (y != 0) {
+			n.push(this.board[x][y - 1]);
+		}
+		if (y != this.height - 1) {
+			n.push(this.board[x][y + 1]);
+		}
+		if (x != 0) {
+			n.push(this.board[x - 1][y]);
+		}
+		if (x != this.width - 1) {
+			n.push(this.board[x + 1][y]);
+		}
+
+		return n;
+	}
+
+	availableNeighbors(x, y) {
+		var list = [];
+		var neighbors = this.getNeighbors(x, y);
+		for (let i = 0; i < neighbors.length; i++) {
+			if (!neighbors[i].visited) list.push(neighbors[i]);
+		}
+		return list;
+	}
+
+	randomNeighbor(x, y) {
+		return Rand.pickRand(this.availableNeighbors(x, y));
+	}
+
+	randomCell() {
+		return this.board[Rand.randomInt(this.width)][Rand.randomInt(this.height)];
+	}
+
+	breakWall(c1, c2) {
+		if (c1.x == c2.x) {
+			if (c1.y < c2.y) {
+				c1.down = false;
+				c2.up = false;
+			}
+			if (c1.y > c2.y) {
+				c1.up = false;
+				c2.down = false;
+			}
+		} else if (c1.y == c2.y) {
+			if (c1.x < c2.x) {
+				c1.right = false;
+				c2.left = false;
+			}
+			if (c1.x > c2.x) {
+				c1.left = false;
+				c2.right = false;
+			}
+		}
+	}
+
+	isDeadEnd(x, y) {
+		var neighbors = this.getNeighbors(x, y);
+		for (let i = 0; i < neighbors.length; i++) {
+			if (!neighbors[i].visited) return false;
+		}
+		return true;
+	}
+}
+
+class MazeGameState {
+	constructor(mazeDimensions, startPosition) {
+		const [ width, height ] = mazeDimensions;
+
+		this.width = width;
+		this.height = height;
+		this.currentPos = startPosition;
+		this.path = [this.currentPos];
+		this.startTime = null;
+		this.gameInProgress = false;
+
+		this.start = startPosition;
 		this.end = {
 			x: this.width - 1,
 			y: this.height - 1
 		};
-		this.initMaze = function () {
-			for (y = 0; y < height; y++) {
-				this.m.push(new Array());
-				for (x = 0; x < width; x++) {
-					this.m[y].push(new Cell(x, y));
-				}
-			}
-		};
-		this.getNeighbors = function (x, y) {
-			var n = [];
-			var c = this.getCell(x, y);
-			if (y != 0) {
-				n.push(this.getCell(x, y - 1));
-			}
-			if (y != height - 1) {
-				n.push(this.getCell(x, y + 1));
-			}
-			if (x != 0) {
-				n.push(this.getCell(x - 1, y));
-			}
-			if (x != width - 1) {
-				n.push(this.getCell(x + 1, y));
-			}
-			return n;
-		};
-		this.availableNeighbors = function (x, y) {
-			var list = [];
-			var neighbors = this.getNeighbors(x, y);
-			for (i = 0; i < neighbors.length; i++) {
-				if (!neighbors[i].visited) list.push(neighbors[i]);
-			}
-			return list;
-		};
-		this.randomNeighbor = function (x, y) {
-			return rand.pickRand(this.availableNeighbors(x, y));
-		};
-		this.randomCell = function() {
-			return this.getCell(rand.randomInt(this.width), rand.randomInt(this.height));
-		};
-		this.breakWall = function (c1, c2) {
-			if (c1.x == c2.x) {
-				if (c1.y < c2.y) {
-					c1.down = false;
-					c2.up = false;
-				}
-				if (c1.y > c2.y) {
-					c1.up = false;
-					c2.down = false;
-				}
-			} else if (c1.y == c2.y) {
-				if (c1.x < c2.x) {
-					c1.right = false;
-					c2.left = false;
-				}
-				if (c1.x > c2.x) {
-					c1.left = false;
-					c2.right = false;
-				}
-			}
-		};
-		this.getCell = function (x, y) {
-			return this.m[y][x];
-		};
-		this.inBounds = function (x, y) {
-			if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-				return true;
-			}
-			return false;
-		};
-		this.isDeadEnd = function (x, y) {
-			var neighbors = this.getNeighbors(x, y);
-			for (i = 0; i < neighbors.length; i++) {
-				if (!neighbors[i].visited) return false;
-			}
+
+		this.board = new MazeGenerator(this.width, this.height, this.start, this.end).board;
+	}
+
+	getCell(x, y) {
+		return this.board[x][y];
+	};
+
+	isStartCell(cell) {
+		if (this.start.x === cell.x && this.start.y === cell.y) return true;
+		return false;
+	}
+
+	isEndCell(cell) {
+		if (this.end.x === cell.x && this.end.y === cell.y) return true;
+		return false;
+	}
+
+	isCellInBounds(x, y) {
+		if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
 			return true;
-		};
-		this.isStart = function (x, y) {
-			if (this.start.x === x && this.start.y === y) return true;
-			return false;
-		};
-		this.isEnd = function (x, y) {
-			if (this.end.x === x && this.end.y === y) return true;
-			return false;
-		};
-		/* Generate the maze using recursive backtracking
-		*  https://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_backtracker
-		*/
-		this.generateMaze = function () {
-			var current_cell = this.randomCell();
-			var next_cell = null;
-			
-			current_cell.visited = true;
-			var visitedStack = [current_cell];
-			
-			while (visitedStack.length > 0) {
-				if (this.isDeadEnd(current_cell.x, current_cell.y)) {
-					current_cell = visitedStack.pop();
-				} else {
-					next_cell = this.randomNeighbor(current_cell.x, current_cell.y);
-					next_cell.visited = true;
-					this.breakWall(current_cell, next_cell);
-					visitedStack.push(current_cell);
-					current_cell = next_cell;
-				}
-			}
-		};
-		this.initMaze();
-		this.generateMaze();
-	}
-	
-	function setup(height, width) {
-		maze = new Maze(height, width);
-		currentPos = options.starting_position;
-		path = [];
-		path.push(currentPos);
-		center();
-	}
-
-	function center() {
-		canvas.width = maze.width * options.scale + 3;
-		canvas.height = maze.height * options.scale + 3;
-		canvas.width = $('body').width();
-		canvas.height = $('body').height();
-		options.offset.x = Math.floor((canvas.width / 2) - (maze.width * options.scale / 2));
-		options.offset.y = Math.floor((canvas.height / 2) - (maze.height * options.scale / 2));
-		$("#a").width(maze.width * options.scale + 3).css('padding-top', (canvas.height / 2) - (maze.height * options.scale / 2) - $('h1').height());
-		$("#time, #steps").css('margin-top', maze.height * options.scale);
-		draw();
-	}
-	
-	function start() {
-		gameInProgress = true;
-		options.onStart();
-	}
-	
-	function draw() {
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		drawPath();
-		drawMaze();
-	}
-	
-	this.move = function(direction) {
-		var newPos = {
-			x: currentPos.x + offsets[direction].x,
-			y: currentPos.y + offsets[direction].y
-		};
-		if (gameInProgress && maze.inBounds(newPos.x, newPos.y)) {
-			if (maze.getCell(currentPos.x, currentPos.y)[direction] === false) {
-				path.push(newPos);
-				currentPos = newPos;
-				draw();
-				showSteps()
-				if (maze.isEnd(newPos.x, newPos.y)) {
-					options.onGameEnd(true);
-				}
-			}
 		}
+		return false;
 	}
 	
-	function drawPath() {
-		ctx.lineWidth = options.user_path_width;
-		ctx.strokeStyle = options.colors.visited_block;
-		ctx.beginPath();
-		ctx.moveTo(options.offset.x + 0.5 * options.scale, 0);
-		for (i = 0; i < path.length - 1; i++) {
-			ctx.lineTo(options.offset.x + (path[i].x + 0.5) * options.scale, options.offset.y + (path[i].y + 0.5) * options.scale);
-		}
-		ctx.lineTo(options.offset.x + (currentPos.x + 0.5) * options.scale, options.offset.y + (currentPos.y + 0.5) * options.scale);
-		ctx.stroke();
-		circle(currentPos.x, currentPos.y, options.colors.current_position);
-	}
-	
-	function drawMaze() {
-		circle(maze.end.x, maze.end.y, options.colors.finish);
-		for (y = 0; y < maze.height; y++) {
-			for (x = 0; x < maze.width; x++) {
-				drawCell(x, y);
-			}
-		}
-	}
-	
-	function drawCell(x, y) {
-		var curCell = maze.getCell(x, y);
-		var originx = x * options.scale;
-		var originy = y * options.scale;
-		if (curCell.up && !maze.isStart(curCell.x, curCell.y)) line(originx, originy, originx + options.scale, originy);
-		if (curCell.down && !maze.isEnd(curCell.x, curCell.y)) line(originx, originy + options.scale, originx + options.scale, originy + options.scale);
-		if (curCell.right) line(originx + options.scale, originy, originx + options.scale, originy + options.scale);
-		if (curCell.left) line(originx, originy, originx, originy + options.scale);
-	}
-	
-	function line(x1, y1, x2, y2) {
-		ctx.beginPath();
-		ctx.strokeStyle = options.colors.walls;
-		ctx.lineWidth = 2;
-		ctx.moveTo(options.offset.x + x1 + 1, options.offset.y + y1 + 1);
-		ctx.lineTo(options.offset.x + x2 + 1, options.offset.y + y2 + 1);
-		ctx.stroke();
-	}
-
-	function circle(x, y, color) {
-		ctx.fillStyle = color;
-		ctx.beginPath();
-		ctx.arc(options.offset.x + (x + 0.5) * options.scale, options.offset.y + (y + 0.5) * options.scale, options.user_diameter, 0, Math.PI*2, true);
-		ctx.closePath();
-		ctx.fill();
-	}
-	
-	this.getSteps = function() {
+	get numSteps() {
 		// subtract one to account for the current positon being part of the path
-		return path.length - 1;
+		return this.path.length - 1;
+	}
+
+	get playTime() {
+		if (this.startTime) {
+			return (new Date()).getTime() - this.startTime.getTime();
+		}
+	}
+}
+
+class MazeGame {
+	constructor(canvas, options) {
+		let defaultOptions = {
+			ui: {},
+			startPosition: { x: 0, y: 0 },
+			dimensions: [16, 10]
+		}
+
+		this.offsets = {
+			"left"	:	{ x: -1, y: 0 },
+			"up"	:	{ x: 0, y:	-1 },
+			"right"	:	{ x: 1, y: 0 },
+			"down"	:	{ x: 0, y: 1 }
+		};
+
+		// TODO: don't use jQuery here
+		this.options = $.extend({}, defaultOptions, options);
+
+		this.state = new MazeGameState(this.options.dimensions, this.options.startPosition);
+		this.ui = new MazeUi(this.state, options.ui, canvas);
+		this.ui.center();
+
+		this.start();
+	}
+	
+	start() {
+		this.state.gameInProgress = true;
+		this.state.startTime = new Date();
+	}
+	
+	move(direction) {
+		var newPos = {
+			x: this.state.currentPos.x + this.offsets[direction].x,
+			y: this.state.currentPos.y + this.offsets[direction].y
+		};
+		if (this.state.gameInProgress && this.state.isCellInBounds(newPos.x, newPos.y)) {
+			if (this.state.getCell(this.state.currentPos.x, this.state.currentPos.y)[direction] === false) {
+				this.state.path.push(newPos);
+				this.state.currentPos = newPos;
+				this.ui.update()
+				if (this.state.isEndCell(newPos)) {
+					this.onGameEnd();
+				}
+			}
+		}
+	}
+
+	onGameEnd() {
+		this.state.gameInProgress = false;
+		clearInterval(timer);
+		center($("#options").show());
+	}
+}
+
+class MazeUi {
+	constructor(state, options, canvas) {
+		this.canvas = canvas;
+		this.ctx = this.canvas.getContext("2d");
+		this.state = state;
+
+		let defaultOptions = {
+			colors: {
+				walls: "#ee4646",
+				curPosition: "#67b9e8",
+				finish: "#65c644",
+				visitedBlock: "#d7edff"
+			},
+			offset: {x: 0, y: 0}, // top left corner where the maze is actually drawn
+			scale: 26,
+			curIndicatorDiameter: 4,
+			pathWidth: 8,
+		}
+
+		// TODO: don't use jQuery here
+		this.options = $.extend({}, defaultOptions, options);
+	}
+
+	update() {
+		this.clear();
+		this.drawPath();
+		this.drawMaze();
+		this.drawSteps()
+		this.drawTimer()
+	}
+
+	center() {
+		let $body = $('body');
+		this.canvas.width = $body.width();
+		this.canvas.height = $body.height();
+
+		this.options.offset.x = Math.floor((this.canvas.width / 2) - (this.state.width * this.options.scale / 2));
+		this.options.offset.y = Math.floor((this.canvas.height / 2) - (this.state.height * this.options.scale / 2));
+		$("#a").width(this.state.width * this.options.scale + 3).css('padding-top', (this.canvas.height / 2) - (this.state.height * this.options.scale / 2) - $('h1').height());
+
+		$("#time, #steps").css('margin-top', this.state.height * this.options.scale);
+		this.update();
+	}
+
+	clear() {
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	}
+
+	drawSteps() {
+		$("#steps").html(this.state.numSteps + " step" + (steps !== 1 ? "s" : ""));
+	}
+
+	drawTimer() {
+		let playTimeSeconds = Math.floor((this.state.playTime || 0) / 1000)
+		$("#time").html(playTimeSeconds + " second" + (playTimeSeconds !== 1 ? "s" : ""));
+	}
+
+	drawPath() {
+		this.ctx.lineWidth = this.options.pathWidth;
+		this.ctx.strokeStyle = this.options.colors.visitedBlock;
+		this.ctx.beginPath();
+		this.ctx.moveTo(this.options.offset.x + 0.5 * this.options.scale, 0);
+		for (let i = 0; i < this.state.path.length - 1; i++) {
+			let pathPosition = this.state.path[i];
+			this.ctx.lineTo(this.options.offset.x + (pathPosition.x + 0.5) * this.options.scale, this.options.offset.y + (pathPosition.y + 0.5) * this.options.scale);
+		}
+		this.ctx.lineTo(this.options.offset.x + (this.state.currentPos.x + 0.5) * this.options.scale, this.options.offset.y + (this.state.currentPos.y + 0.5) * this.options.scale);
+		this.ctx.stroke();
+		this.circle(this.state.currentPos.x, this.state.currentPos.y, this.options.colors.curPosition);
+	}
+
+	drawMaze() {
+		this.circle(this.state.end.x, this.state.end.y, this.options.colors.finish);
+
+		for (let x = 0; x < this.state.width; x++) {
+			for (let y = 0; y < this.state.height; y++) {
+				let cell = this.state.getCell(x, y);
+				this.drawCell(cell);
+			}
+		}
+	}
+
+	drawCell(cell) {
+		var originx = cell.x * this.options.scale;
+		var originy = cell.y * this.options.scale;
+		if (cell.up && !this.state.isStartCell(cell)) this.line(originx, originy, originx + this.options.scale, originy);
+		if (cell.down && !this.state.isEndCell(cell)) this.line(originx, originy + this.options.scale, originx + this.options.scale, originy + this.options.scale);
+		if (cell.right) this.line(originx + this.options.scale, originy, originx + this.options.scale, originy + this.options.scale);
+		if (cell.left) this.line(originx, originy, originx, originy + this.options.scale);
+	}
+
+	line(x1, y1, x2, y2) {
+		this.ctx.beginPath();
+		this.ctx.strokeStyle = this.options.colors.walls;
+		this.ctx.lineWidth = 2;
+		this.ctx.moveTo(this.options.offset.x + x1 + 1, this.options.offset.y + y1 + 1);
+		this.ctx.lineTo(this.options.offset.x + x2 + 1, this.options.offset.y + y2 + 1);
+		this.ctx.stroke();
+	}
+
+	circle(x, y, color) {
+		this.ctx.fillStyle = color;
+		this.ctx.beginPath();
+		this.ctx.arc(this.options.offset.x + (x + 0.5) * this.options.scale, this.options.offset.y + (y + 0.5) * this.options.scale, this.options.curIndicatorDiameter, 0, Math.PI*2, true);
+		this.ctx.closePath();
+		this.ctx.fill();
 	}
 }
