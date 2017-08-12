@@ -68,7 +68,11 @@
 				return false;
 			}
 		});
-		
+
+		$(window).on('resize', function(){
+			mazeGame.ui.center();
+		});
+
 		function center(e) {
 			e.css('top', $("#maze").offset().top + $("#maze").height() / 2 - e.outerHeight() / 2)
 		}

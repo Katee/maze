@@ -140,39 +140,27 @@ class Maze {
 	};
 }
 
+class MazeGameState {
+	constructor(mazeDimensions, startingPosition) {
+		this.currentPos = startingPosition;
+		this.path = [this.currentPos];
+		this.gameInProgress = false;
+
+		const [ height, width ] = mazeDimensions;
+		this.maze = new Maze(height, width, this.currentPos);
+	}
+}
+
 class MazeGame {
 	constructor(canvas, options) {
-		this.canvas = canvas;
-
 		let default_options = {
-			colors: {
-				walls: "#ee4646",
-				current_position: "#67b9e8",
-				finish: "#65c644",
-				visited_block: "#d7edff"
-			},
+			ui: {},
 			starting_position: { x: 0, y: 0 },
 			level_size: [16, 10],
-			offset: {x: 0, y: 0},
-			scale: 26,
-			user_diameter: 4,
-			user_path_width: 8,
 			onStart: function(){},
 			onGameEnd: function(){},
 			onMove: function(){}
 		}
-
-		// todo: don't use jQuery here
-		this.options = $.extend({}, default_options, options);
-
-		// todo: don't use jQuery here
-		$(window).on('resize', this.center);
-		
-		this.currentPos = null;
-		this.ctx = null;
-		this.maze = null;
-		this.path = null;
-		this.gameInProgress = false;
 
 		this.offsets = {
 			"left"	:	{ x: -1, y: 0 },
@@ -181,97 +169,127 @@ class MazeGame {
 			"down"	:	{ x: 0, y: 1 }
 		};
 
-		this.init();
-	}
-	
-	init() {
-		if (this.canvas.getContext) {
-			this.ctx = this.canvas.getContext("2d");
-			this.setup(this.options.level_size[0], this.options.level_size[1]);
-			this.start();
-		}
-	}
+		// TODO: don't use jQuery here
+		this.options = $.extend({}, default_options, options);
 
-	setup(height, width) {
-		this.currentPos = this.options.starting_position;
-		this.maze = new Maze(height, width, this.currentPos);
-		this.path = [this.currentPos];
-		this.center();
-	}
-
-	center() {
-		this.canvas.width = this.maze.width * this.options.scale + 3;
-		this.canvas.height = this.maze.height * this.options.scale + 3;
-		this.canvas.width = $('body').width();
-		this.canvas.height = $('body').height();
-		this.options.offset.x = Math.floor((this.canvas.width / 2) - (this.maze.width * this.options.scale / 2));
-		this.options.offset.y = Math.floor((this.canvas.height / 2) - (this.maze.height * this.options.scale / 2));
-		$("#a").width(this.maze.width * this.options.scale + 3).css('padding-top', (this.canvas.height / 2) - (this.maze.height * this.options.scale / 2) - $('h1').height());
-		$("#time, #steps").css('margin-top', this.maze.height * this.options.scale);
-		this.draw();
+		this.state = new MazeGameState(this.options.level_size, this.options.starting_position);
+		this.ui = new MazeUi(this.state, options.ui, canvas);
+		this.ui.center();
+		this.start();
 	}
 	
 	start() {
-		this.gameInProgress = true;
+		this.state.gameInProgress = true;
 		this.options.onStart();
-	}
-	
-	draw() {
-		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		this.drawPath();
-		this.drawMaze();
 	}
 	
 	move(direction) {
 		var newPos = {
-			x: this.currentPos.x + this.offsets[direction].x,
-			y: this.currentPos.y + this.offsets[direction].y
+			x: this.state.currentPos.x + this.offsets[direction].x,
+			y: this.state.currentPos.y + this.offsets[direction].y
 		};
-		if (this.gameInProgress && this.maze.inBounds(newPos.x, newPos.y)) {
-			if (this.maze.getCell(this.currentPos.x, this.currentPos.y)[direction] === false) {
-				this.path.push(newPos);
-				this.currentPos = newPos;
-				this.draw();
-				showSteps()
-				if (this.maze.isEnd(newPos.x, newPos.y)) {
+		if (this.state.gameInProgress && this.state.maze.inBounds(newPos.x, newPos.y)) {
+			if (this.state.maze.getCell(this.state.currentPos.x, this.state.currentPos.y)[direction] === false) {
+				this.state.path.push(newPos);
+				this.state.currentPos = newPos;
+				this.ui.update()
+				if (this.state.maze.isEnd(newPos.x, newPos.y)) {
 					this.options.onGameEnd(true);
 				}
 			}
 		}
 	}
 	
+	getSteps() {
+		// subtract one to account for the current positon being part of the path
+		return this.state.path.length - 1;
+	}
+}
+
+class MazeUi {
+	constructor(state, options, canvas) {
+		this.canvas = canvas;
+		this.ctx = this.canvas.getContext("2d");
+		this.state = state;
+
+		let defaultOptions = {
+			colors: {
+				walls: "#ee4646",
+				current_position: "#67b9e8",
+				finish: "#65c644",
+				visited_block: "#d7edff"
+			},
+			offset: {x: 0, y: 0}, // top left corner where the maze is actually drawn
+			scale: 26,
+			user_diameter: 4,
+			user_path_width: 8,
+		}
+
+		// TODO: don't use jQuery here
+		this.options = $.extend({}, defaultOptions, options);
+	}
+
+	update() {
+		this.draw();
+		showSteps() // TODO don't reference external function
+	}
+
+	center() {
+		let $body = $('body');
+		this.canvas.width = $body.width();
+		this.canvas.height = $body.height();
+
+		this.options.offset.x = Math.floor((this.canvas.width / 2) - (this.state.maze.width * this.options.scale / 2));
+		this.options.offset.y = Math.floor((this.canvas.height / 2) - (this.state.maze.height * this.options.scale / 2));
+		$("#a").width(this.state.maze.width * this.options.scale + 3).css('padding-top', (this.canvas.height / 2) - (this.state.maze.height * this.options.scale / 2) - $('h1').height());
+
+		$("#time, #steps").css('margin-top', this.state.maze.height * this.options.scale);
+		this.draw();
+	}
+
+	clear() {
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	}
+
+	draw() {
+		this.clear();
+		this.drawPath();
+		this.drawMaze();
+	}
+
 	drawPath() {
 		this.ctx.lineWidth = this.options.user_path_width;
 		this.ctx.strokeStyle = this.options.colors.visited_block;
 		this.ctx.beginPath();
 		this.ctx.moveTo(this.options.offset.x + 0.5 * this.options.scale, 0);
-		for (let i = 0; i < this.path.length - 1; i++) {
-			this.ctx.lineTo(this.options.offset.x + (this.path[i].x + 0.5) * this.options.scale, this.options.offset.y + (this.path[i].y + 0.5) * this.options.scale);
+		for (let i = 0; i < this.state.path.length - 1; i++) {
+			let pathPosition = this.state.path[i];
+			this.ctx.lineTo(this.options.offset.x + (pathPosition.x + 0.5) * this.options.scale, this.options.offset.y + (pathPosition.y + 0.5) * this.options.scale);
 		}
-		this.ctx.lineTo(this.options.offset.x + (this.currentPos.x + 0.5) * this.options.scale, this.options.offset.y + (this.currentPos.y + 0.5) * this.options.scale);
+		this.ctx.lineTo(this.options.offset.x + (this.state.currentPos.x + 0.5) * this.options.scale, this.options.offset.y + (this.state.currentPos.y + 0.5) * this.options.scale);
 		this.ctx.stroke();
-		this.circle(this.currentPos.x, this.currentPos.y, this.options.colors.current_position);
+		this.circle(this.state.currentPos.x, this.state.currentPos.y, this.options.colors.current_position);
 	}
-	
+
 	drawMaze() {
-		this.circle(this.maze.end.x, this.maze.end.y, this.options.colors.finish);
-		for (let y = 0; y < this.maze.height; y++) {
-			for (let x = 0; x < this.maze.width; x++) {
+		this.circle(this.state.maze.end.x, this.state.maze.end.y, this.options.colors.finish);
+		for (let y = 0; y < this.state.maze.height; y++) {
+			for (let x = 0; x < this.state.maze.width; x++) {
 				this.drawCell(x, y);
 			}
 		}
 	}
-	
+
 	drawCell(x, y) {
-		var curCell = this.maze.getCell(x, y);
+		var curCell = this.state.maze.getCell(x, y);
 		var originx = x * this.options.scale;
 		var originy = y * this.options.scale;
-		if (curCell.up && !this.maze.isStart(curCell.x, curCell.y)) this.line(originx, originy, originx + this.options.scale, originy);
-		if (curCell.down && !this.maze.isEnd(curCell.x, curCell.y)) this.line(originx, originy + this.options.scale, originx + this.options.scale, originy + this.options.scale);
+		if (curCell.up && !this.state.maze.isStart(curCell.x, curCell.y)) this.line(originx, originy, originx + this.options.scale, originy);
+		if (curCell.down && !this.state.maze.isEnd(curCell.x, curCell.y)) this.line(originx, originy + this.options.scale, originx + this.options.scale, originy + this.options.scale);
 		if (curCell.right) this.line(originx + this.options.scale, originy, originx + this.options.scale, originy + this.options.scale);
 		if (curCell.left) this.line(originx, originy, originx, originy + this.options.scale);
 	}
-	
+
 	line(x1, y1, x2, y2) {
 		this.ctx.beginPath();
 		this.ctx.strokeStyle = this.options.colors.walls;
@@ -287,10 +305,5 @@ class MazeGame {
 		this.ctx.arc(this.options.offset.x + (x + 0.5) * this.options.scale, this.options.offset.y + (y + 0.5) * this.options.scale, this.options.user_diameter, 0, Math.PI*2, true);
 		this.ctx.closePath();
 		this.ctx.fill();
-	}
-	
-	getSteps() {
-		// subtract one to account for the current positon being part of the path
-		return this.path.length - 1;
 	}
 }
