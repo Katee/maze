@@ -19,9 +19,10 @@ class Cell {
 	}
 }
 
-/* Generate the maze using recursive backtracking
-*  https://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_backtracker
-*/
+/* Generate the maze using recursive backtracking.
+ * Returns a 2D array of Cells
+ * https://en.wikipedia.org/wiki/Maze_generation_algorithm#Recursive_backtracker
+ */
 class MazeGenerator {
 	constructor(width, height, start, end) {
 		this.width = width;
