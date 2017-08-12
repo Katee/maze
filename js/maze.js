@@ -139,7 +139,6 @@ class MazeGameState {
 		};
 
 		this.board = new MazeGenerator(this.width, this.height, this.start, this.end).board;
-		console.log(this.board)
 	}
 
 	getCell(x, y) {
